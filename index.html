@@ -1,168 +1,203 @@
 <!DOCTYPE html>
 <html>
-   <head>
-      <meta charset="utf-8">
-      <script type = "text/javascript" src = "https://d3js.org/d3.v4.min.js"></script>
-      <style>
-         svg .x.label {font-size: 12px;}
-         svg .y.label {font-size: 12px;}
+    <head>
+        <meta charset="utf-8">
+        <script type = "text/javascript" src = "https://d3js.org/d3.v4.min.js"></script>
+        <style>
+            html {
+                font-family: Arial,sans-serif;
+            }
+            #stop {
+                display: none;
+            }
+            #age {
+                font-size: 14px;
+            }
+            svg .x.label, svg .y.label {
+                font-size: 12px;
+                fill: #222;
+            }
+            svg g.axis line, svg g.axis path {
+                stroke: #aaa;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="chart"></div>
+        <div id="option">
+            <input name="updateButton" type="button" value="Loading..." id="play" onclick="play(1)" disabled="disabled" />
+            <input name="updateButton" type="button" value="Stop" id="stop" onclick="stop()" />
+            <span id="age">Age: </span>
+        </div>
 
-         path.line {
-            fill: none;
-            stroke: #000;
-         }
-      </style>
-   </head>
+        <script>
+            var src = "sprite.png";
+            var img = new Image();
+            img.src = src; // preload
+            img.onload = function(){ document.getElementById("play").disabled = false; document.getElementById("play").value = "Play"; }
 
-   <body>
-      <div id="option">
-         <input name="updateButton" type="button" value="Update" onclick="updateData()" />
-      </div>
-      <div id="chart"></div>
-      <script>
+            var imgFull = new Image();
+            imgFull.src = "sprite-fullsize.png"; // preload
+            imgFull.onload = function(){ src = "sprite-fullsize.png"; }
 
+            var startConst = 15;
+            var stopConst = 29;
+            var startAge = startConst;
+            var stopAge = stopConst;
+            var ageStep = 5;
+            var sideOfSquare = 36;
+            var keepCycle = 1;
 
-var startAge = 15;
-var ageStep = 2;
+            var margin = {top: 20, right: 40, bottom: 20, left: 40},
+                width = 1000 - margin.left - margin.right,
+                height = 500 - margin.top - margin.bottom;
 
-var margin = {top: 10, right: 10, bottom: 20, left: 40},
-    width = 1000 - margin.left - margin.right,
-    height = 500 - margin.top - margin.bottom;
+            var xScale = d3.scaleLinear().range([0, width]);
 
+            var yScale = d3.scaleLinear().range([height, 0]);
 
-var xScale = d3.scaleLinear().range([0, width]);
+            xScale.domain([0,600]);
+            yScale.domain([40,100]); // todo: make it dynamic from server request
+                               
+            var svg = d3.select("#chart")
+                .append("svg")
+                    .attr("width", width + margin.left + margin.right)
+                    .attr("height",  height + margin.top + margin.bottom)
+                .append("g")
+                    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-var yScale = d3.scaleLinear().range([height, 0]);
+            svg.append("g")
+                .attr("class", "x axis")
+                .attr("transform", "translate(0," + height + ")")
+                .call(d3.axisBottom(xScale))
 
-var line = d3.line()
-	.x(function(d, i) { return xScale(d.Wage); })
-	.y(function(d) { return yScale(d.Overall); })
-	.curve(d3.curveBasis); // apply smoothing to the line
+            svg.append("text")
+                .attr("class", "x label")
+                .attr("text-anchor", "end")
+                .attr("x", width)
+                .attr("y", height - 6)
+                .text("Wage");
 
-var svg = d3.select("#chart")
-	.append("svg")
-		.attr("width", width + margin.left + margin.right)
-		.attr("height",  height + margin.top + margin.bottom)
-	.append("g")
-		.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+            svg.append("g")
+                .attr("class", "y axis")
+                .call(d3.axisLeft(yScale));
 
+            svg.append("text")
+                .attr("class", "y label")
+                .attr("text-anchor", "end")
+                .attr("y", -12)
+                .attr("x", 60)
+                .attr("dy", ".75em")
+                .text("Overall Rate");
 
-d3.csv("data.csv", function(error, data) {
-	if (error) {
-		throw error;
-	} else {
-		//data.forEach(function(d) {
-		//	var img = new Image();
-		//	img.src = d.Photo;
-		//});
-		data = data.filter(function(d){ return (+d.Age >= startAge) && (+d.Age <= (startAge + ageStep)); })
-        // console.log(data);
+            var g = svg.append("svg:g")
+                .attr("class", "players");
+    
 
-		data.forEach(function(d) {
-			d.Overall = +d.Overall;
-			d.Wage = +d.Wage.replace('€', '').replace('K', '');
-		});
+            d3.csv("data.csv", function(error, data) {
+                if (error) {
+                    throw error;
+                } else {
+                    sum = {};
+                    data.forEach(function(d) {
+                        sum[d.Age] = ++sum[d.Age] || 0;
+                    });
+                    console.log(sum);
+                }
+            });
 
-		data = data.sort(function(x, y){
-   			return d3.ascending(x.Wage, y.Wage);
-		})
+            function loop() {                                    
+                console.log('age ' + startAge);
+                d3.csv("data.csv", function(error, data) {
+                    if (error) {
+                        throw error;
+                    } else {
+                        data = data.filter(function(d){
+                            if (startAge > startConst) {
+                                return (+d.Age == (startAge + ageStep));
+                            } else {
+                                return (+d.Age >= startAge) && (+d.Age <= (startAge + ageStep));
+                            }
+                        })
+                        console.log(data.length);
 
-		xScale.domain([0, d3.max(data, function(d) { return d.Wage; })]);
+                        data.forEach(function(d) {
+                            d.Overall = +d.Overall;
+                            d.Wage = +d.Wage.replace("€", "").replace("K", "");
+                        });
 
-		yScale.domain([0, d3.max(data, function(d) { return d.Overall; })]);
+                        data = data.sort(function(x, y){
+                            return d3.ascending(x.Wage, y.Wage);
+                        });
 
-		svg.append("g")
-			.attr("class", "x axis")
-			.attr("transform", "translate(0," + height + ")")
-			.call(d3.axisBottom(xScale));
+                        var g = svg.select(".players");                
 
-		svg.append("g")
-			.attr("class", "y axis")
-			.call(d3.axisLeft(yScale));
+                        g.transition().duration(1000).ease(d3.easeLinear).style("opacity", 0).on("end", function(){
+                            if (startAge == startConst) {
+                                for (var i = 0; i <= ageStep; i++) { 
+                                    g.selectAll(".view-box-" + (stopAge + i)).remove();
+                                    g.selectAll(".use-" + (stopAge + i)).remove();
+                                }
+                            } else {
+                                g.selectAll(".view-box-" + (startAge - 1)).remove();
+                                g.selectAll(".use-" + (startAge - 1)).remove();
+                            }
+                            
+                            g.selectAll(".view-box")
+                                .data(data)
+                                .enter()
+                                .append("symbol")
+                                .attr("id", function(d){ return "player-" + d[""]; })
+                                .attr("viewBox", function(d){
+                                    return (d[""] % 100 * sideOfSquare) + " " + (Math.ceil(d[""] / 100) * sideOfSquare + 1) + " " + sideOfSquare + " " + sideOfSquare;
+                                })
+                                .attr("class", function(d) { return "view-box" + "-" + d.Age})
+                                .append("image")
+                                .attr("xlink:href", function() { return src;})
+                                .attr("width", "" + (4800 * 3 / 4) + "px")
+                                .attr("height", "" + (8784 * 3 / 4) + "px")
+                                .attr("x", 0)
+                                .attr("y", 0);
 
-		svg.append("path")
-			.datum(data)
-			.attr("class", "line") // assign a class for styling
-			.attr("d", line);      // calls the line generator
+                            g.selectAll(".use")
+                                .data(data)
+                                .enter()
+                                .append("use")
+                                .attr("class", function(d){ return "use" + "-" + d.Age})
+                                .attr("xlink:href", function(d){ return "#player-" + d[""]; })
+                                .attr("width", sideOfSquare)
+                                .attr("height", sideOfSquare)
+                                .attr("x", function(d, i) { return xScale(d.Wage); })
+                                .attr("y", function(d) { return yScale(d.Overall); });
 
-		svg.append("text")
-    		.attr("class", "x label")
-			.attr("text-anchor", "end")
-			.attr("x", width)
-			.attr("y", height - 6)
-			.text("Wage");
+                            document.getElementById("age").textContent = "Age: " + startAge + "-" + (startAge + ageStep);
+                            g.transition().duration(2000).ease(d3.easeLinear).style("opacity", 1).on("end", function(){
 
-		svg.append("text")
-		    .attr("class", "y label")
-		    .attr("text-anchor", "end")
-		    .attr("y", -10)
-		    .attr("x", 60)
-		    .attr("dy", ".75em")
-		    .text("Overall Rate");
-
-                 svg.selectAll(".images")
-			.data(data.slice(0, 20))
-			.enter().append("image")
-				.attr("class", "image")
-				.attr("xlink:href", function(d){ return d.Photo })
-				.attr("x", function(d, i) { return xScale(d.Wage) })
-				.attr("y", function(d) { return yScale(d.Overall) })
-				.attr("width", 20)
-				.attr("height", 20);
-
-	}
-});
-
-
-function updateData() {
-
-d3.csv("data.csv", function(error, data) {
-	if (error) {
-		throw error;
-	} else {
-		startAge += 4
-		data = data.filter(function(d){ return (+d.Age >= startAge) && (+d.Age <= (startAge + ageStep)); })
-
-		data.forEach(function(d) {
-        	d.Overall = +d.Overall;
-			d.Wage = +d.Wage.replace('€', '').replace('K', '');
-		});
-
-		data = data.sort(function(x, y){
-   			return d3.ascending(x.Wage, y.Wage);
-		});
-
-		xScale.domain([0, d3.max(data, function(d) { return d.Wage; })]);
-
-		yScale.domain([0, d3.max(data, function(d) { return d.Overall; })]);
-
-		//svg.select(".line").transition().duration(1500).ease(d3.easeLinear).style("opacity", 0).on("end", function(){
-		//	svg.select(".line")
-		//		.attr("d", line(data))
-		//		.transition().duration(1500).ease(d3.easeLinear).style("opacity", 1);
-		//})
-
-		svg.selectAll(".image").transition().duration(1500).ease(d3.easeLinear).style("opacity", 0).on("end", function(){
-			svg.selectAll(".image").remove();
-                	svg.selectAll(".images")
-				.data(data.slice(0, 20))
-				.enter().append("image")
-					.attr("class", "image")
-					.attr("xlink:href", function(d){ return d.Photo })
-					.attr("x", function(d, i) { return xScale(d.Wage) })
-					.attr("y", function(d) { return yScale(d.Overall) })
-					.attr("width", 20)
-					.attr("height", 20)
-					.style("opacity", 0);
-
-			svg.selectAll(".image").transition().duration(1500).ease(d3.easeLinear).style("opacity", 1);
-
-		});
-	}
-});
-
-}
-
+                                setTimeout(function() {
+                                    if (startAge == stopConst) {
+                                        startAge = startConst;
+                                    } else {
+                                        startAge += 1;
+                                    }
+                                    if (keepCycle) { loop(); }
+                                }, 3000);
+                            });
+                            
+                        });
+                    }
+                });
+            }
+            function stop() {
+            	document.getElementById("stop").style.display = 'none';
+            	document.getElementById("play").style.display = 'inline';
+                keepCycle = 0;
+            }
+            function play() {
+                document.getElementById("stop").style.display = 'inline';
+	        document.getElementById("play").style.display = 'none';
+                keepCycle = 1;
+                loop();
+            }
       </script>
    </body>
 </html>
