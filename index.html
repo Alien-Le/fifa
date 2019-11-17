@@ -25,28 +25,62 @@
     <body>
         <div id="chart"></div>
         <div id="option">
-            <input name="updateButton" type="button" value="Loading..." id="play" onclick="play(1)" disabled="disabled" />
+            <input name="updateButton" type="button" value="Loading..." id="play" onclick="play()" disabled="disabled" />
             <input name="updateButton" type="button" value="Stop" id="stop" onclick="stop()" />
             <span id="age">Age: </span>
         </div>
 
         <script>
-            var src = "sprite.png";
-            var img = new Image();
-            img.src = src; // preload
-            img.onload = function(){ document.getElementById("play").disabled = false; document.getElementById("play").value = "Play"; }
+            function chainLoad(startPos, stopPos) {
+                if(startPos <= stopPos) {
+                    setTimeout(function() {
+                        this[startPos] = new Image();
+                        this[startPos].src = "sprite-" + startPos + ".png";
+                        this[startPos].onload = function() { 
+                            chainImgs = chainLoad.call(this, ++startPos, stopPos); 
+                        }.bind(this);
+                        this[startPos].onerror = function() { 
+                            chainImgs = chainLoad.call(this, ++startPos, stopPos); 
+                        }.bind(this);
+                    }.bind(this), 3000);
+                }               
+            }
 
-            var imgFull = new Image();
-            imgFull.src = "sprite-fullsize.png"; // preload
-            imgFull.onload = function(){ src = "sprite-fullsize.png"; }
+            function multipleLoad (startPos, stopPos, func) {
+                var counter = 0;
 
+                var onCallback = function(){
+                    counter++;
+                    if(startPos + counter - 1 < stopPos){
+                        return;
+                    }
+                    func.call(this);
+                }.bind(this);
+
+                for(var pos = startPos; pos <= stopPos; pos++) {
+                    this[pos] = new Image();
+                    this[pos].onload = onCallback;
+                    this[pos].onerror = onCallback;
+                    this[pos].src = "sprite-" + pos + ".png";
+                }
+            }
+           
             var startConst = 15;
-            var stopConst = 29;
+            var stopConst = 29;  // max age: 45          
             var startAge = startConst;
             var stopAge = stopConst;
             var ageStep = 5;
             var sideOfSquare = 36;
             var keepCycle = 1;
+
+
+            var imgs = {}
+            
+            multipleLoad.call(imgs, startConst, startConst + ageStep, function() {
+		document.getElementById("play").disabled = false;
+                document.getElementById("play").value = "Play";
+                chainLoad.call(this, startConst + ageStep + 1, stopConst + ageStep); 
+            });
 
             var margin = {top: 20, right: 40, bottom: 20, left: 40},
                 width = 1000 - margin.left - margin.right,
@@ -56,8 +90,8 @@
 
             var yScale = d3.scaleLinear().range([height, 0]);
 
-            xScale.domain([0,600]);
-            yScale.domain([40,100]); // todo: make it dynamic from server request
+            xScale.domain([0, 600]);
+            yScale.domain([40, 100]);  // todo: make it dynamic from server request
                                
             var svg = d3.select("#chart")
                 .append("svg")
@@ -91,23 +125,22 @@
                 .text("Overall Rate");
 
             var g = svg.append("svg:g")
-                .attr("class", "players");
-    
+                .attr("class", "players");    
 
-            d3.csv("data.csv", function(error, data) {
+            /*d3.csv("data.csv", function(error, data) {
                 if (error) {
                     throw error;
                 } else {
                     sum = {};
                     data.forEach(function(d) {
-                        sum[d.Age] = ++sum[d.Age] || 0;
+                        sum[d.Age] = ++sum[d.Age] || 1;
                     });
                     console.log(sum);
                 }
-            });
+            });*/
 
             function loop() {                                    
-                console.log('age ' + startAge);
+                // console.log('age ' + startAge);
                 d3.csv("data.csv", function(error, data) {
                     if (error) {
                         throw error;
@@ -119,17 +152,28 @@
                                 return (+d.Age >= startAge) && (+d.Age <= (startAge + ageStep));
                             }
                         })
-                        console.log(data.length);
+                        // console.log(data.length);
 
+                        data = data.sort(function(x, y){
+                            return d3.ascending(+x.Age, +y.Age) || d3.ascending(+x[''], +y['']);
+                        });
+                        var prevAge = 0;
+                        var nextPos = 0;
                         data.forEach(function(d) {
+                            if (prevAge == d.Age) {
+                                nextPos++;                                                                                              
+                            } else {
+                                nextPos = 0;
+                                prevAge = d.Age;
+                            }
+                            d.Pos = nextPos;
                             d.Overall = +d.Overall;
                             d.Wage = +d.Wage.replace("€", "").replace("K", "");
                         });
-
+                        
                         data = data.sort(function(x, y){
                             return d3.ascending(x.Wage, y.Wage);
                         });
-
                         var g = svg.select(".players");                
 
                         g.transition().duration(1000).ease(d3.easeLinear).style("opacity", 0).on("end", function(){
@@ -149,13 +193,13 @@
                                 .append("symbol")
                                 .attr("id", function(d){ return "player-" + d[""]; })
                                 .attr("viewBox", function(d){
-                                    return (d[""] % 100 * sideOfSquare) + " " + (Math.ceil(d[""] / 100) * sideOfSquare + 1) + " " + sideOfSquare + " " + sideOfSquare;
+                                    return (d.Pos % 100 * sideOfSquare) + " " + (Math.floor(d.Pos / 100) * sideOfSquare + 1) + " " + sideOfSquare + " " + sideOfSquare;
                                 })
                                 .attr("class", function(d) { return "view-box" + "-" + d.Age})
                                 .append("image")
-                                .attr("xlink:href", function() { return src;})
-                                .attr("width", "" + (4800 * 3 / 4) + "px")
-                                .attr("height", "" + (8784 * 3 / 4) + "px")
+                                .attr("xlink:href", function(d) { return imgs[+d.Age].src; })
+                                .attr("width", function(d) { if(imgs[+d.Age] != undefined) { return imgs[+d.Age].width + "px"; } else { return "0px"; } })
+                                .attr("height", function(d) { if(imgs[+d.Age] != undefined) {return imgs[+d.Age].height + "px"; } else { return "0px"; } })
                                 .attr("x", 0)
                                 .attr("y", 0);
 

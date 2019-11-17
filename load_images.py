@@ -11,7 +11,6 @@ webpage = urlopen(req)
 img = Image.open(webpage)
 img.save("player_photos/notfound.png")
 
-'''
 with open('data.csv', newline='') as csv_file:
     csv_reader = csv.DictReader(csv_file)
     for csv_row in csv_reader:
@@ -23,4 +22,3 @@ with open('data.csv', newline='') as csv_file:
             logging.info('save: %s' % csv_row['Photo'])
         except HTTPError:
             logging.info('skip: %s (404)' % csv_row['Photo'])
-'''
