@@ -17,4 +17,4 @@ and replace the values in braces with your database connection details.
 2) ensure that `pandas` and `pymysql` python modules are being installed  
 3) run python3 ./fill_database.py --config_path {THE_PATH_WHERE_THE_CONFIG_IS_SAVED}  
   
-The working example you can see here: http://alien-cafe.net/fifa/
+Working example you can see here: http://alien-cafe.net/fifa/
