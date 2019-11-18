@@ -36,14 +36,14 @@
                     setTimeout(function() {
                         this[startPos] = new Image();
                         this[startPos].src = "sprite-" + startPos + ".png";
-                        this[startPos].onload = function() { 
-                            chainImgs = chainLoad.call(this, ++startPos, stopPos); 
+                        this[startPos].onload = function() {
+                            chainImgs = chainLoad.call(this, ++startPos, stopPos);
                         }.bind(this);
-                        this[startPos].onerror = function() { 
-                            chainImgs = chainLoad.call(this, ++startPos, stopPos); 
+                        this[startPos].onerror = function() {
+                            chainImgs = chainLoad.call(this, ++startPos, stopPos);
                         }.bind(this);
                     }.bind(this), 3000);
-                }               
+                }
             }
 
             function multipleLoad (startPos, stopPos, func) {
@@ -64,22 +64,21 @@
                     this[pos].src = "sprite-" + pos + ".png";
                 }
             }
-           
+
             var startConst = 15;
-            var stopConst = 29;  // max age: 45          
+            var stopConst = 29;  // max age: 45
             var startAge = startConst;
             var stopAge = stopConst;
             var ageStep = 5;
             var sideOfSquare = 36;
             var keepCycle = 1;
 
-
             var imgs = {}
-            
+
             multipleLoad.call(imgs, startConst, startConst + ageStep, function() {
-		document.getElementById("play").disabled = false;
+                document.getElementById("play").disabled = false;
                 document.getElementById("play").value = "Play";
-                chainLoad.call(this, startConst + ageStep + 1, stopConst + ageStep); 
+                chainLoad.call(this, startConst + ageStep + 1, stopConst + ageStep);
             });
 
             var margin = {top: 20, right: 40, bottom: 20, left: 40},
@@ -92,7 +91,7 @@
 
             xScale.domain([0, 600]);
             yScale.domain([40, 100]);  // todo: make it dynamic from server request
-                               
+
             var svg = d3.select("#chart")
                 .append("svg")
                     .attr("width", width + margin.left + margin.right)
@@ -125,9 +124,10 @@
                 .text("Overall Rate");
 
             var g = svg.append("svg:g")
-                .attr("class", "players");    
+                .attr("class", "players");
 
-            /*d3.csv("data.csv", function(error, data) {
+            /*d3.json("//fifa.alien-cafe.net/?age=16", function(error, data) {
+                console.log(data);
                 if (error) {
                     throw error;
                 } else {
@@ -139,12 +139,21 @@
                 }
             });*/
 
-            function loop() {                                    
-                // console.log('age ' + startAge);
-                d3.csv("data.csv", function(error, data) {
+            function range(lowEnd, highEnd) {
+                var list = [];
+                for (var i = lowEnd; i <= highEnd; i++) {
+                    list.push(i);
+                }
+                return list
+            }
+
+            function loop() {
+                var ages = (startAge > startConst) ? '' + (startAge + ageStep) : range(startAge, startAge + ageStep).join()
+                d3.json("//fifa.alien-cafe.net/?age=" + ages, function(error, data) {
                     if (error) {
                         throw error;
                     } else {
+                        /*
                         data = data.filter(function(d){
                             if (startAge > startConst) {
                                 return (+d.Age == (startAge + ageStep));
@@ -152,7 +161,7 @@
                                 return (+d.Age >= startAge) && (+d.Age <= (startAge + ageStep));
                             }
                         })
-                        // console.log(data.length);
+                        */
 
                         data = data.sort(function(x, y){
                             return d3.ascending(+x.Age, +y.Age) || d3.ascending(+x[''], +y['']);
@@ -161,7 +170,7 @@
                         var nextPos = 0;
                         data.forEach(function(d) {
                             if (prevAge == d.Age) {
-                                nextPos++;                                                                                              
+                                nextPos++;
                             } else {
                                 nextPos = 0;
                                 prevAge = d.Age;
@@ -170,15 +179,15 @@
                             d.Overall = +d.Overall;
                             d.Wage = +d.Wage.replace("€", "").replace("K", "");
                         });
-                        
+
                         data = data.sort(function(x, y){
                             return d3.ascending(x.Wage, y.Wage);
                         });
-                        var g = svg.select(".players");                
+                        var g = svg.select(".players");
 
                         g.transition().duration(1000).ease(d3.easeLinear).style("opacity", 0).on("end", function(){
                             if (startAge == startConst) {
-                                for (var i = 0; i <= ageStep; i++) { 
+                                for (var i = 0; i <= ageStep; i++) {
                                     g.selectAll(".view-box-" + (stopAge + i)).remove();
                                     g.selectAll(".use-" + (stopAge + i)).remove();
                                 }
@@ -186,7 +195,7 @@
                                 g.selectAll(".view-box-" + (startAge - 1)).remove();
                                 g.selectAll(".use-" + (startAge - 1)).remove();
                             }
-                            
+
                             g.selectAll(".view-box")
                                 .data(data)
                                 .enter()
@@ -226,7 +235,7 @@
                                     if (keepCycle) { loop(); }
                                 }, 3000);
                             });
-                            
+
                         });
                     }
                 });
