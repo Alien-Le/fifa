@@ -1,11 +1,15 @@
 import sys
 import pandas as pd
 import pymysql
+import argparse
 from pymysql.cursors import DictCursor
 from contextlib import closing
 
-config_path = '/srv/alien'
-sys.path.append(config_path)
+parser = argparse.ArgumentParser(description='Short sample app')
+parser.add_argument('--config_path', action="store", dest="config_path", default='/srv/alien')
+args = parser.parse_args()
+
+sys.path.append(args.config_path)
 
 import config
 
