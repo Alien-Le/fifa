@@ -150,10 +150,10 @@
             function loop() {
                 var ages = (startAge > startConst) ? '' + (startAge + ageStep) : range(startAge, startAge + ageStep).join()
                 d3.json("//fifa.alien-cafe.net/?age=" + ages, function(error, data) {
+                // d3.csv("data.csv", function(error, data) {
                     if (error) {
                         throw error;
-                    } else {
-                        /*
+                    } else { /*
                         data = data.filter(function(d){
                             if (startAge > startConst) {
                                 return (+d.Age == (startAge + ageStep));
@@ -161,7 +161,6 @@
                                 return (+d.Age >= startAge) && (+d.Age <= (startAge + ageStep));
                             }
                         })
-                        */
 
                         data = data.sort(function(x, y){
                             return d3.ascending(+x.Age, +y.Age) || d3.ascending(+x[''], +y['']);
@@ -179,10 +178,12 @@
                             d.Overall = +d.Overall;
                             d.Wage = +d.Wage.replace("€", "").replace("K", "");
                         });
-
                         data = data.sort(function(x, y){
                             return d3.ascending(x.Wage, y.Wage);
-                        });
+                        });*/
+
+                        // console.log(data);
+
                         var g = svg.select(".players");
 
                         g.transition().duration(1000).ease(d3.easeLinear).style("opacity", 0).on("end", function(){
@@ -200,7 +201,7 @@
                                 .data(data)
                                 .enter()
                                 .append("symbol")
-                                .attr("id", function(d){ return "player-" + d[""]; })
+                                .attr("id", function(d){ return "player-" + d.ID; })
                                 .attr("viewBox", function(d){
                                     return (d.Pos % 100 * sideOfSquare) + " " + (Math.floor(d.Pos / 100) * sideOfSquare + 1) + " " + sideOfSquare + " " + sideOfSquare;
                                 })
@@ -217,7 +218,7 @@
                                 .enter()
                                 .append("use")
                                 .attr("class", function(d){ return "use" + "-" + d.Age})
-                                .attr("xlink:href", function(d){ return "#player-" + d[""]; })
+                                .attr("xlink:href", function(d){ return "#player-" + d.ID; })
                                 .attr("width", sideOfSquare)
                                 .attr("height", sideOfSquare)
                                 .attr("x", function(d, i) { return xScale(d.Wage); })
