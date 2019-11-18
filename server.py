@@ -3,12 +3,16 @@ import sys
 import pandas as pd
 import pymysql
 import json
+import argparse
 from urllib import parse
 from pymysql.cursors import DictCursor
 from contextlib import closing
 
+parser = argparse.ArgumentParser(description='Short sample app')
+parser.add_argument('--config_path', action="store", dest="config_path", default='/srv/alien')
+args = parser.parse_args()
 
-sys.path.append('/srv/alien')
+sys.path.append(args.config_path)
 
 import config
 

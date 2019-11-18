@@ -126,19 +126,6 @@
             var g = svg.append("svg:g")
                 .attr("class", "players");
 
-            /*d3.json("//fifa.alien-cafe.net/?age=16", function(error, data) {
-                console.log(data);
-                if (error) {
-                    throw error;
-                } else {
-                    sum = {};
-                    data.forEach(function(d) {
-                        sum[d.Age] = ++sum[d.Age] || 1;
-                    });
-                    console.log(sum);
-                }
-            });*/
-
             function range(lowEnd, highEnd) {
                 var list = [];
                 for (var i = lowEnd; i <= highEnd; i++) {
@@ -150,40 +137,9 @@
             function loop() {
                 var ages = (startAge > startConst) ? '' + (startAge + ageStep) : range(startAge, startAge + ageStep).join()
                 d3.json("//fifa.alien-cafe.net/?age=" + ages, function(error, data) {
-                // d3.csv("data.csv", function(error, data) {
                     if (error) {
                         throw error;
-                    } else { /*
-                        data = data.filter(function(d){
-                            if (startAge > startConst) {
-                                return (+d.Age == (startAge + ageStep));
-                            } else {
-                                return (+d.Age >= startAge) && (+d.Age <= (startAge + ageStep));
-                            }
-                        })
-
-                        data = data.sort(function(x, y){
-                            return d3.ascending(+x.Age, +y.Age) || d3.ascending(+x[''], +y['']);
-                        });
-                        var prevAge = 0;
-                        var nextPos = 0;
-                        data.forEach(function(d) {
-                            if (prevAge == d.Age) {
-                                nextPos++;
-                            } else {
-                                nextPos = 0;
-                                prevAge = d.Age;
-                            }
-                            d.Pos = nextPos;
-                            d.Overall = +d.Overall;
-                            d.Wage = +d.Wage.replace("€", "").replace("K", "");
-                        });
-                        data = data.sort(function(x, y){
-                            return d3.ascending(x.Wage, y.Wage);
-                        });*/
-
-                        // console.log(data);
-
+                    } else {
                         var g = svg.select(".players");
 
                         g.transition().duration(1000).ease(d3.easeLinear).style("opacity", 0).on("end", function(){
@@ -208,8 +164,10 @@
                                 .attr("class", function(d) { return "view-box" + "-" + d.Age})
                                 .append("image")
                                 .attr("xlink:href", function(d) { return imgs[+d.Age].src; })
-                                .attr("width", function(d) { if(imgs[+d.Age] != undefined) { return imgs[+d.Age].width + "px"; } else { return "0px"; } })
-                                .attr("height", function(d) { if(imgs[+d.Age] != undefined) {return imgs[+d.Age].height + "px"; } else { return "0px"; } })
+                                .attr("width", function(d) { 
+                                    if(imgs[+d.Age] != undefined) { return imgs[+d.Age].width + "px"; } else { return "0px"; } })
+                                .attr("height", function(d) {
+                                    if(imgs[+d.Age] != undefined) {return imgs[+d.Age].height + "px"; } else { return "0px"; } })
                                 .attr("x", 0)
                                 .attr("y", 0);
 

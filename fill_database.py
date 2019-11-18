@@ -13,14 +13,12 @@ sys.path.append(args.config_path)
 
 import config
 
-
 dbname = config.MYSQL['db']
 config.MYSQL['db']  = ''
 with closing(pymysql.connect(**config.MYSQL)) as connection:
     with connection.cursor(DictCursor) as cursor:
         cursor.execute('CREATE DATABASE IF NOT EXISTS ' + dbname)
 config.MYSQL['db']  = dbname
-
 
 players = pd.read_csv('data.csv')
 nationalities = list(players['Nationality'].unique())
@@ -38,7 +36,9 @@ with closing(pymysql.connect(**config.MYSQL)) as connection:
             PRIMARY KEY (nationality_id),
             UNIQUE KEY (nationality)
         )  ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci''')
-        cursor.execute('INSERT IGNORE INTO nationality (nationality) VALUES ' + ', '.join(['(%s)'] * len(nationalities)), nationalities)
+        cursor.execute('''
+        INSERT IGNORE INTO nationality (nationality) VALUES ''' + ', '.join(['(%s)'] * len(nationalities)),
+        nationalities)
         cursor.execute('SELECT * FROM nationality')
         db_nationalities = {}
         for db_nationality in cursor.fetchall():
@@ -69,8 +69,10 @@ with closing(pymysql.connect(**config.MYSQL)) as connection:
             PRIMARY KEY (player_id),
             UNIQUE KEY (external_id),
             KEY age (age),
-            CONSTRAINT fk__player_nationality FOREIGN KEY (nationality_id) REFERENCES nationality (nationality_id) ON DELETE CASCADE ON UPDATE CASCADE,
-            CONSTRAINT fk__player_club FOREIGN KEY (club_id) REFERENCES club (club_id) ON DELETE CASCADE ON UPDATE CASCADE
+            CONSTRAINT fk__player_nationality FOREIGN KEY (nationality_id)
+                REFERENCES nationality (nationality_id) ON DELETE CASCADE ON UPDATE CASCADE,
+            CONSTRAINT fk__player_club FOREIGN KEY (club_id)
+                REFERENCES club (club_id) ON DELETE CASCADE ON UPDATE CASCADE
         )  ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci''')
         players_data = []
         for idx, player in players.iterrows():
@@ -86,5 +88,6 @@ with closing(pymysql.connect(**config.MYSQL)) as connection:
             players_data.append(db_nationalities[player['Nationality']])
             players_data.append(player['position_in_sprite'])
         cursor.execute('''
-        INSERT IGNORE INTO player (name, age, external_id, wage, overall_rate, club_id, nationality_id, position_in_sprite)
+        INSERT IGNORE INTO player
+        (name, age, external_id, wage, overall_rate, club_id, nationality_id, position_in_sprite)
         VALUES ''' + ', '.join(['(%s, %s, %s, %s, %s, %s, %s, %s)'] * len(players)), players_data)
