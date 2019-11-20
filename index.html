@@ -25,7 +25,8 @@
     <body>
         <div id="chart"></div>
         <div id="option">
-            <input name="updateButton" type="button" value="Loading..." id="play" onclick="play()" disabled="disabled" />
+            <input name="updateButton" type="button" value="Loading..." id="play" onclick="play()"
+                   disabled="disabled" />
             <input name="updateButton" type="button" value="Stop" id="stop" onclick="stop()" />
             <span id="age">Age: </span>
         </div>
@@ -35,7 +36,7 @@
                 if(startPos <= stopPos) {
                     setTimeout(function() {
                         this[startPos] = new Image();
-                        this[startPos].src = "sprite-" + startPos + ".png";
+                        this[startPos].src = "sprites/sprite-" + startPos + ".png";
                         this[startPos].onload = function() {
                             chainImgs = chainLoad.call(this, ++startPos, stopPos);
                         }.bind(this);
@@ -49,9 +50,9 @@
             function multipleLoad (startPos, stopPos, func) {
                 var counter = 0;
 
-                var onCallback = function(){
+                var onCallback = function() {
                     counter++;
-                    if(startPos + counter - 1 < stopPos){
+                    if(startPos + counter - 1 < stopPos) {
                         return;
                     }
                     func.call(this);
@@ -61,7 +62,7 @@
                     this[pos] = new Image();
                     this[pos].onload = onCallback;
                     this[pos].onerror = onCallback;
-                    this[pos].src = "sprite-" + pos + ".png";
+                    this[pos].src = "sprites/sprite-" + pos + ".png";
                 }
             }
 
@@ -135,14 +136,15 @@
             }
 
             function loop() {
-                var ages = (startAge > startConst) ? '' + (startAge + ageStep) : range(startAge, startAge + ageStep).join()
+                var ages = (startAge > startConst) ? '' + (startAge + ageStep) :
+                           range(startAge, startAge + ageStep).join()
                 d3.json("//fifa.alien-cafe.net/?age=" + ages, function(error, data) {
                     if (error) {
                         throw error;
                     } else {
                         var g = svg.select(".players");
 
-                        g.transition().duration(1000).ease(d3.easeLinear).style("opacity", 0).on("end", function(){
+                        g.transition().duration(1000).ease(d3.easeLinear).style("opacity", 0).on("end", function() {
                             if (startAge == startConst) {
                                 for (var i = 0; i <= ageStep; i++) {
                                     g.selectAll(".view-box-" + (stopAge + i)).remove();
@@ -157,17 +159,29 @@
                                 .data(data)
                                 .enter()
                                 .append("symbol")
-                                .attr("id", function(d){ return "player-" + d.ID; })
-                                .attr("viewBox", function(d){
-                                    return (d.Pos % 100 * sideOfSquare) + " " + (Math.floor(d.Pos / 100) * sideOfSquare + 1) + " " + sideOfSquare + " " + sideOfSquare;
+                                .attr("id", function(d) { return "player-" + d.ID; })
+                                .attr("viewBox", function(d) {
+                                    return (d.Pos % 100 * sideOfSquare) + " " + 
+                                    (Math.floor(d.Pos / 100) * sideOfSquare + 1) + " " + 
+                                    sideOfSquare + " " + sideOfSquare;
                                 })
                                 .attr("class", function(d) { return "view-box" + "-" + d.Age})
                                 .append("image")
                                 .attr("xlink:href", function(d) { return imgs[+d.Age].src; })
-                                .attr("width", function(d) { 
-                                    if(imgs[+d.Age] != undefined) { return imgs[+d.Age].width + "px"; } else { return "0px"; } })
+                                .attr("width", function(d) {
+                                    if(imgs[+d.Age] != undefined) { 
+                                        return imgs[+d.Age].width + "px"; 
+                                    } else { 
+                                        return "0px"; 
+                                    }
+                                })
                                 .attr("height", function(d) {
-                                    if(imgs[+d.Age] != undefined) {return imgs[+d.Age].height + "px"; } else { return "0px"; } })
+                                    if(imgs[+d.Age] != undefined) {
+                                        return imgs[+d.Age].height + "px"; 
+                                    } else { 
+                                        return "0px"; 
+                                    }
+                                })
                                 .attr("x", 0)
                                 .attr("y", 0);
 
@@ -175,15 +189,16 @@
                                 .data(data)
                                 .enter()
                                 .append("use")
-                                .attr("class", function(d){ return "use" + "-" + d.Age})
-                                .attr("xlink:href", function(d){ return "#player-" + d.ID; })
+                                .attr("class", function(d) { return "use" + "-" + d.Age})
+                                .attr("xlink:href", function(d) { return "#player-" + d.ID; })
                                 .attr("width", sideOfSquare)
                                 .attr("height", sideOfSquare)
                                 .attr("x", function(d, i) { return xScale(d.Wage); })
                                 .attr("y", function(d) { return yScale(d.Overall); });
 
-                            document.getElementById("age").textContent = "Age: " + startAge + "-" + (startAge + ageStep);
-                            g.transition().duration(2000).ease(d3.easeLinear).style("opacity", 1).on("end", function(){
+                            document.getElementById("age").textContent = "Age: " + startAge + "-" + 
+                                                                         (startAge + ageStep);
+                            g.transition().duration(2000).ease(d3.easeLinear).style("opacity", 1).on("end", function() {
 
                                 setTimeout(function() {
                                     if (startAge == stopConst) {

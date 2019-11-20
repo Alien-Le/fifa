@@ -1,6 +1,5 @@
 # uwsgi --socket :9000 --wsgi-file server.py
 import sys
-import pandas as pd
 import pymysql
 import json
 import argparse
@@ -14,18 +13,14 @@ args = parser.parse_args()
 
 sys.path.append(args.config_path)
 
-import config
+import config  # NOQA
+
 
 def application(env, start_response):
     start_response('200 OK', [('Content-Type', 'text/html')])
     res = []
     query = dict(parse.parse_qsl(env['QUERY_STRING']))
     if 'age' in query:
-        # players = pd.read_csv('data.csv')
-        # players.rename(columns={'Unnamed: 0':''}, inplace=True)
-        # players_filtered = players[players.Age.isin(query['age'].split(','))]
-        # return [players_filtered.to_json(orient='records').encode()]
-
         ages = query['age'].split(',')
         with closing(pymysql.connect(**config.MYSQL)) as connection:
             with connection.cursor(DictCursor) as cursor:

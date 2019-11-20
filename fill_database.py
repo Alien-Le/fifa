@@ -11,14 +11,14 @@ args = parser.parse_args()
 
 sys.path.append(args.config_path)
 
-import config
+import config  # NOQA
 
 dbname = config.MYSQL['db']
-config.MYSQL['db']  = ''
+config.MYSQL['db'] = ''
 with closing(pymysql.connect(**config.MYSQL)) as connection:
     with connection.cursor(DictCursor) as cursor:
         cursor.execute('CREATE DATABASE IF NOT EXISTS ' + dbname)
-config.MYSQL['db']  = dbname
+config.MYSQL['db'] = dbname
 
 players = pd.read_csv('data.csv')
 nationalities = list(players['Nationality'].unique())
@@ -38,7 +38,7 @@ with closing(pymysql.connect(**config.MYSQL)) as connection:
         )  ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci''')
         cursor.execute('''
         INSERT IGNORE INTO nationality (nationality) VALUES ''' + ', '.join(['(%s)'] * len(nationalities)),
-        nationalities)
+                       nationalities)
         cursor.execute('SELECT * FROM nationality')
         db_nationalities = {}
         for db_nationality in cursor.fetchall():

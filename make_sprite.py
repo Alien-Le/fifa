@@ -2,8 +2,6 @@ import csv
 import logging
 import os
 import math
-import time
-import sys
 from PIL import Image
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(message)s')
@@ -26,7 +24,7 @@ with open('data.csv', newline='') as csv_file:
     for csv_row in csv_reader:
         if csv_row['Age'] not in images_by_age:
             images_by_age[csv_row['Age']] = []
-        images_by_age[csv_row['Age']].append(csv_row['\ufeff']);
+        images_by_age[csv_row['Age']].append(csv_row['\ufeff'])
 
 for age, images in images_by_age.items():
     print(age)
@@ -43,7 +41,7 @@ for age, images in images_by_age.items():
                 if size is not None:
                     im.thumbnail(size, Image.ANTIALIAS)
                 frames.append(im.getdata())
-        except:
+        except Exception:
             with Image.open("player_photos/notfound.png") as im:
                 if size is not None:
                     im.thumbnail(size, Image.ANTIALIAS)
@@ -53,7 +51,7 @@ for age, images in images_by_age.items():
     tile_width = frames[0].size[0]
     tile_height = frames[0].size[1]
 
-    if len(frames) > max_frames_row :
+    if len(frames) > max_frames_row:
         spritesheet_width = tile_width * max_frames_row
         required_rows = math.ceil(len(frames) / max_frames_row)
         spritesheet_height = tile_height * required_rows
@@ -72,10 +70,10 @@ for age, images in images_by_age.items():
         bottom = top + tile_height
         right = left + tile_width
 
-        box = (left,top,right,bottom)
+        box = (left, top, right, bottom)
         box = [int(i) for i in box]
         cut_frame = current_frame.crop((0, 0, tile_width, tile_height))
 
         spritesheet.paste(cut_frame, box)
 
-    spritesheet.save("sprite-%s.png" % age, "PNG")
+    spritesheet.save("sprites/sprite-%s.png" % age, "PNG")
